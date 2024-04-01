@@ -12,7 +12,7 @@ loaders = {
     'train' : torch.utils.data.DataLoader(Train_dataset, 
                                           batch_size=8,
                                           sampler=train_sampler, 
-                                          num_workers=1),
+                                          ),
     'val' : torch.utils.data.DataLoader(Train_dataset, 
                                           batch_size=8,
                                           sampler=val_sampler, 
