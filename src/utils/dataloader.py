@@ -16,11 +16,11 @@ loaders = {
     'val' : torch.utils.data.DataLoader(Train_dataset, 
                                           batch_size=8,
                                           sampler=val_sampler, 
-                                          num_workers=1),
+                                          ),
     
     'test'  : torch.utils.data.DataLoader(Test_dataset, 
                                           batch_size=1, 
                                           shuffle=True, 
-                                          num_workers=1),
+                                          ),
 }
 
