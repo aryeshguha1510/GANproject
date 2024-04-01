@@ -52,8 +52,8 @@ transform = transforms.Compose([
 
 #Train_dataset = CustomDataset(root_dir='C:/Users/aryes/Desktop/YEAR 2/mrm/GANproject/dataset/train_data', transform=transform)
 #Test_dataset = CustomDataset(root_dir='C/Users/aryes/Desktop/YEAR 2/mrm/GANproject/dataset/test_data', transform=transform)
-Train_dataset = CustomDataset(root_dir='kaggle/working/GANproject/dataset/train_data', transform=transform)
-Test_dataset = CustomDataset(root_dir='kaggle/working/GANproject/dataset/test_data', transform=transform)
+Train_dataset = CustomDataset(root_dir='/kaggle/working/GANproject/dataset/train_data', transform=transform)
+Test_dataset = CustomDataset(root_dir='/kaggle/working/GANproject/dataset/test_data', transform=transform)
         
     
      
