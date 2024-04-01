@@ -64,7 +64,7 @@ def train_model(model, train_dataloader, val_dataloader, optimizer, num_epochs):
             
                 # Calculate PSNR and SSIM for validation set
                 for i in range(len(outputs)):
-                    val_psnr_total += psnr(labels[i].numpy(), outputs[i].numpy())
+                    val_psnr_total += psnr(labels[i].cpu().numpy(), outputs[i].cpu().numpy())
                   # val_ssim_total += ssim(labels[i].numpy(), outputs[i].numpy(), multichannel=True)
 
         val_psnr_avg = val_psnr_total / len(loaders['val'])
