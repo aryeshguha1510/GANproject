@@ -62,14 +62,14 @@ def train_GAN(generator, discriminator, train_loader, val_loader, device, num_ep
             # Train Generator
             optimizer_G.zero_grad()
             generated_imgs = generator(images)
-            g_loss = adversarial_loss(discriminator(generated_imgs), valid)
+            g_loss = adversarial_loss(discriminator(generated_imgs), valid.unsqueeze(1))
             g_loss.backward()
             optimizer_G.step()
 
             # Train Discriminator
             optimizer_D.zero_grad()
-            real_loss = adversarial_loss(discriminator(labels), valid)
-            fake_loss = adversarial_loss(discriminator(generated_imgs.detach()), fake)
+            real_loss = adversarial_loss(discriminator(labels), valid.unsqueeze(1))
+            fake_loss = adversarial_loss(discriminator(generated_imgs.detach()), fake.unsqueeze(1))
             d_loss = (real_loss + fake_loss) / 2
             d_loss.backward()
             optimizer_D.step()
