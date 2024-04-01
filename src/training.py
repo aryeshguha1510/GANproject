@@ -44,7 +44,7 @@ def train_model(model, train_dataloader, val_dataloader, optimizer, num_epochs):
             totalLoss += loss.item()
             
             for i in range(len(outputs)):
-                train_psnr_total += psnr(labels[i].numpy(), outputs[i].detach().numpy())
+                train_psnr_total += psnr(labels[i].cpu().numpy(), outputs[i].detach().cpu().numpy())
            # train_ssim_total += ssim(labels[i].numpy(), outputs[i].detach().numpy(),wiz_size=11, channel_axis=3, multichannel=True)
         losslist.append(totalLoss/len(loaders['train']))
         train_psnr_avg = train_psnr_total / len(loaders['train'])
