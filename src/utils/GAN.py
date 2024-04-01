@@ -53,23 +53,25 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
-        self.model = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.2),
-            nn.Dropout2d(0.3),
-            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.2),
-            nn.Dropout2d(0.3),
-            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.2),
-            nn.Dropout2d(0.3),
-            # Flatten before going to linear layer
-            nn.Flatten(),
-            # Adjust the following layer to match the output of the last Conv2d layer
-            nn.Linear(64 * 78 * 58, 1),
-            nn.Sigmoid(),
-        )
-
+        
+        self.conv1 = nn.Conv2d(3, 64, 4, stride=2, padding=1)  # Input: 3 channels, Output: 64 channels, Kernel size: 4x4, Stride: 2
+        self.conv2 = nn.Conv2d(64, 128, 4, stride=2, padding=1)  # Input: 64 channels, Output: 128 channels, Kernel size: 4x4, Stride: 2
+        self.conv3 = nn.Conv2d(128, 256, 4, stride=2, padding=1)  # Input: 128 channels, Output: 256 channels, Kernel size: 4x4, Stride: 2
+        self.conv4 = nn.Conv2d(256, 512, 4, stride=2, padding=1)  # Input: 256 channels, Output: 512 channels, Kernel size: 4x4, Stride: 2
+        
+        self.fc = nn.Linear(512*4*4, 1)  # Fully connected layer to produce a single output
+        
+        self.leaky_relu = nn.LeakyReLU(0.2)  # Leaky ReLU activation function
+        self.sigmoid = nn.Sigmoid()  # Sigmoid activation function to produce probability
+        
     def forward(self, x):
-        x = self.model(x)
-        return x
+        out = self.leaky_relu(self.conv1(x))
+        out = self.leaky_relu(self.conv2(out))
+        out = self.leaky_relu(self.conv3(out))
+        out = self.leaky_relu(self.conv4(out))
+        
+        out = out.view(out.size(0), -1)  # Flatten the output for the fully connected layer
+        out = self.fc(out)
+        out = self.sigmoid(out)  # Output a probability (0-1)
+        
+        return out
