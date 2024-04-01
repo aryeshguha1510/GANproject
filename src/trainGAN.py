@@ -33,7 +33,7 @@ def validate_and_calculate_psnr(val_loader, generator, device):
     total_psnr = 0.0
     with torch.no_grad():
         for batch in val_loader:
-            images,labels = batch['image'].to(device), batch['targets'].to(device)
+            images,labels = batch['image'].to(device), batch['target'].to(device)
             outputs = generator(images)
             psnr = psnrcalc(outputs.cpu().numpy(), labels.cpu().numpy())
             total_psnr += psnr.item()
