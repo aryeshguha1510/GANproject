@@ -13,9 +13,7 @@ model = unet().to(device)
 optimizer = optim.Adam(model.parameters(),lr=0.001,betas=(0.9,0.999))
 
 num_epochs = 10
-losslist = []
-best_psnr=0.0
-best_ssim=0.0
+
 total_step = len(loaders['train'])
 
 
@@ -27,9 +25,11 @@ def train_model(model, train_dataloader, val_dataloader, optimizer, num_epochs):
         model.train()
         train_psnr_total = 0.0
         train_ssim_total = 0.0
+        losslist = []
+        totalLoss = 0.0
         for batch in train_dataloader:
-            images = batch['image']
-            labels = batch['target']
+            images = batch['image'].to(device)
+            labels = batch['target'].to(device)
             outputs = model(images)
             loss = F.l1_loss(outputs, labels)
             
@@ -41,11 +41,12 @@ def train_model(model, train_dataloader, val_dataloader, optimizer, num_epochs):
             
             # apply gradients
             optimizer.step()
+            totalLoss += loss.item()
             
             for i in range(len(outputs)):
                 train_psnr_total += psnr(labels[i].numpy(), outputs[i].detach().numpy())
            # train_ssim_total += ssim(labels[i].numpy(), outputs[i].detach().numpy(),wiz_size=11, channel_axis=3, multichannel=True)
-
+        losslist.append(totalLoss/len(loaders['train']))
         train_psnr_avg = train_psnr_total / len(loaders['train'])
         #train_ssim_avg = train_ssim_total / len(loaders['train'])
         
@@ -55,8 +56,8 @@ def train_model(model, train_dataloader, val_dataloader, optimizer, num_epochs):
         best_val_psnr_avg=0.0
         with torch.no_grad():
             for batch in loaders['val']:
-                images = batch['image']
-                labels = batch['target']
+                images = batch['image'].to(device)
+                labels = batch['target'].to(device)
             
                 # Forward pass
                 outputs = model(images)
