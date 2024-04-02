@@ -78,4 +78,4 @@ class Discriminator(nn.Module):
         out = torch.sigmoid(self.final(out))
         
         # Flatten the output to [batch_size]
-        return out.view(-1, 1).squeeze(1)
+        return out.view(-1, 1).squeeze(1)   

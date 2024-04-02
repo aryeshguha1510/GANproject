@@ -5,14 +5,22 @@ from utils.model import unet
 import torch.optim as optim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
-import torch.nn.functional as F 
+import torch.nn.functional as F
+import wandb 
 torch.manual_seed(4)
+import argparse
+parser = argparse.ArgumentParser(description='Input hyperparameters')
+parser.add_argument('--k',metavar='API Key', type=str, help='Enter the API Key')
+parser.add_argument('-num_epochs',metavar='Number of Epochs', type=int, help='Enter the number of epochs')
+parser.add_argument('-lr',metavar='Learning Rate', type=float, help='Enter the learning rate')
+
+args = parser.parse_args()
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 model = unet().to(device)
-optimizer = optim.Adam(model.parameters(),lr=0.001,betas=(0.9,0.999))
+optimizer = optim.Adam(model.parameters(),lr=args.lr,betas=(0.9,0.999))
 
-num_epochs = 10
+num_epochs = args.num_epochs
 
 total_step = len(loaders['train'])
 
@@ -20,6 +28,7 @@ total_step = len(loaders['train'])
         
         
 def train_model(model, train_dataloader, val_dataloader, optimizer, num_epochs):
+    
     for epoch in range(num_epochs):
         # Training
         model.train()
@@ -32,6 +41,7 @@ def train_model(model, train_dataloader, val_dataloader, optimizer, num_epochs):
             labels = batch['target'].to(device)
             outputs = model(images)
             loss = F.l1_loss(outputs, labels)
+            wandb.log({"train_loss": loss.item(), "Epoch": num_epochs+1})
             
             # clear gradients for this training step
             optimizer.zero_grad()
@@ -77,7 +87,17 @@ def train_model(model, train_dataloader, val_dataloader, optimizer, num_epochs):
             torch.save(model.state_dict(), 'weights.pth')
             print('Weights Saved')
         
-        
+wandb.login(key=args.k)
+wandb.init(
+    # set the wandb project where this run will be logged
+    project="GANproject",
+    
+    # track hyperparameters and run metadata
+    config={
+    "num_epochs": args.num_epochs,
+    "lr": args.lr,
+    }
+)        
 if __name__ == '__main__':
     # Define and load datasets and dataloaders
     

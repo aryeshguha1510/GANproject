@@ -13,21 +13,17 @@ import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import torchvision.utils
 import numpy as np
+import wandb
 torch.manual_seed(4)
+import argparse
+parser = argparse.ArgumentParser(description='Input hyperparameters')
+parser.add_argument('--k',metavar='API Key', type=str, help='Enter the API Key')
+parser.add_argument('-num_epochs',metavar='Number of Epochs', type=int, help='Enter the number of epochs')
+parser.add_argument('-lr1',metavar='Learning Rate', type=float, help='Enter the learning rate')
+parser.add_argument('-lr2',metavar='Learning Rate', type=float, help='Enter the learning rate')
 
+args = parser.parse_args()
 
-def show_images(images, title=None, nrow=5):
-    """
-    Utility function for showing images with matplotlib
-    """
-    images = torchvision.utils.make_grid(images, nrow=nrow)
-    np_images = images.numpy()
-    plt.figure(figsize=(20, 10))
-    plt.imshow(np.transpose(np_images, (1, 2, 0)))
-    if title:
-        plt.title(title)
-    plt.axis('off')
-    plt.show()
 def validate_and_calculate_psnr(val_loader, generator, device):
     generator.eval()
     total_psnr = 0.0
@@ -43,14 +39,12 @@ def validate_and_calculate_psnr(val_loader, generator, device):
 def train_GAN(generator, discriminator, train_loader, val_loader, device, num_epochs):
     # Losses & optimizers
     adversarial_loss = nn.BCELoss()
-    optimizer_G = optim.Adam(generator.parameters(), lr=0.001)
-    optimizer_D = optim.Adam(discriminator.parameters(), lr=0.001)
+    optimizer_G = optim.Adam(generator.parameters(), lr=args.lr1)
+    optimizer_D = optim.Adam(discriminator.parameters(), lr=args.lr2)
     highest_psnr = 0.0
     for epoch in range(num_epochs):
-        t=0
         generator.train()
         discriminator.train()
-        train_psnr_total = 0.0
         epoch_loss_g = 0.0
         epoch_loss_d = 0.0
         for batch in train_loader:
@@ -63,6 +57,7 @@ def train_GAN(generator, discriminator, train_loader, val_loader, device, num_ep
             optimizer_G.zero_grad()
             generated_imgs = generator(images)
             g_loss = adversarial_loss(discriminator(generated_imgs), valid.squeeze(1))
+            wandb.log({"Generator Loss": g_loss.item(), "Epoch": num_epochs+1})
             g_loss.backward()
             optimizer_G.step()
 
@@ -71,16 +66,12 @@ def train_GAN(generator, discriminator, train_loader, val_loader, device, num_ep
             real_loss = adversarial_loss(discriminator(labels), valid.squeeze(1))
             fake_loss = adversarial_loss(discriminator(generated_imgs.detach()), fake.squeeze(1)  )
             d_loss = (real_loss + fake_loss) / 2
+            wandb.log({"Discriminator Loss": d_loss.item(), "Epoch": num_epochs+1})
             d_loss.backward()
             optimizer_D.step()
 
             epoch_loss_g += g_loss.item()
             epoch_loss_d += d_loss.item()
-            t=t+1
-            if t==1:
-                show_images(images.cpu(), title="Input Images", nrow=5)
-                show_images(generated_imgs.cpu(), title="Generated Images", nrow=5)
-                show_images(labels.cpu(), title="Target Images", nrow=5)
 
         avg_psnr = validate_and_calculate_psnr(val_loader, generator, device)
         print(f"Epoch {epoch + 1}, G_loss: {epoch_loss_g:.4f}, D_loss: {epoch_loss_d:.4f}, Avg PSNR: {avg_psnr:.2f} dB")
@@ -88,12 +79,23 @@ def train_GAN(generator, discriminator, train_loader, val_loader, device, num_ep
             highest_psnr = avg_psnr
             torch.save(generator.state_dict(), 'best_generator_weights.pth')
             print(f"Saved better generator model with PSNR: {highest_psnr:.2f} dB")
-            
+
+wandb.login(key=args.k)
+wandb.init(
+    # set the wandb project where this run will be logged
+    project="GANproject",
+    
+    # track hyperparameters and run metadata
+    config={
+    "num_epochs": args.num_epochs,
+    "lr": args.lr,
+    }
+)            
 if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     generator = Generator().to(device)
     discriminator = Discriminator().to(device)
     train_loader = loaders['train']
     val_loader = loaders['val']
-    num_epochs = 10
+    num_epochs = args.num_epochs
     train_GAN(generator, discriminator, train_loader, val_loader, device, num_epochs)
