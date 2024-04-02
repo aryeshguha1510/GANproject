@@ -32,7 +32,8 @@ class CustomDataset(Dataset):
         elif 'ground_truth' in image_name:
             target_name = image_name.replace('ground_truth', 'noisy')
             target_path = os.path.join(self.root_dir, target_name)
-            target = plt.imread(target_path)
+            image_name = plt.imread(target_path)
+            target = plt.imread(image_path)
     
         else:
             raise ValueError("Invalid filename format")

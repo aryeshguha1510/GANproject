@@ -30,17 +30,17 @@ def visualize_sample(data_loader, model, device, num_images=3):
     data, targets = batch['image'].to(device), batch['target'].to(device)
     with torch.no_grad():
         outputs = model(data)
-    imgs = torch.cat([data[:num_images], outputs[:num_images], targets[:num_images]], dim=0)
+    imgs = torch.cat([targets[:num_images], outputs[:num_images], data[:num_images]], dim=0)
     grid = make_grid(imgs, nrow=num_images)
     plt.figure(figsize=(15, 5))
     plt.imshow(grid.cpu().permute(1, 2, 0))
     plt.axis('off')
-    plt.title("Target - Generated - Original")
+    plt.title("Original - Generated - Target")
     plt.show()
 
 if __name__ == '__main__':
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    model_path = 'C:/Users/aryes/Desktop/YEAR 2/mrm/GANproject/weights (2).pth'  # Update this path
+    model_path = 'C:/Users/aryes/Desktop/YEAR 2/mrm/GANproject/weights (5).pth'  # Update this path
     model = load_model(model_path, device)
     test_loader = loaders['test']
     inference(test_loader, model, device)

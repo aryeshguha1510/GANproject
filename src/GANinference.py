@@ -35,7 +35,7 @@ def visualize_sample(data_loader, model, device, num_images=3):
     plt.figure(figsize=(15, 5))
     plt.imshow(grid.cpu().permute(1, 2, 0))
     plt.axis('off')
-    plt.title("Target - Generated - Original")
+    plt.title("Original - Generated - Target")
     plt.show()
     
 if __name__ == '__main__':
