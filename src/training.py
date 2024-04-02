@@ -53,12 +53,14 @@ def validate_and_calculate_ssim(val_loader, model, device):
         
         
 def train_model(model, train_dataloader, val_dataloader, optimizer, num_epochs):
+    best_val_psnr_avg = 0.0
     
     for epoch in range(num_epochs):
         # Training
         model.train()
         train_psnr_total = 0.0
-        train_ssim_total = 0.0
+        
+        
         losslist = []
         totalLoss = 0.0
         for batch in train_dataloader:
