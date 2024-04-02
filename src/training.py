@@ -3,7 +3,7 @@ import torch.nn as nn
 from utils.dataloader import loaders
 from utils.model import unet
 import torch.optim as optim
-from skimage.metrics import peak_signal_noise_ratio as psnr
+from skimage.metrics import peak_signal_noise_ratio as psnrcalc
 from skimage.metrics import structural_similarity as ssim
 import torch.nn.functional as F
 import wandb 
@@ -23,6 +23,18 @@ optimizer = optim.Adam(model.parameters(),lr=args.lr,betas=(0.9,0.999))
 num_epochs = args.num_epochs
 
 total_step = len(loaders['train'])
+
+def validate_and_calculate_psnr(val_loader, model, device):
+    model.eval()
+    total_psnr = 0.0
+    with torch.no_grad():
+        for batch in val_loader:
+            images,labels = batch['image'].to(device), batch['target'].to(device)
+            outputs = model(images)
+            psnr = psnrcalc(outputs.cpu().numpy(), labels.cpu().numpy())
+            total_psnr += psnr.item()
+    avg_psnr = total_psnr / len(val_loader)
+    return avg_psnr
 
 
         
@@ -54,30 +66,13 @@ def train_model(model, train_dataloader, val_dataloader, optimizer, num_epochs):
             totalLoss += loss.item()
             
             for i in range(len(outputs)):
-                train_psnr_total += psnr(labels[i].cpu().numpy(), outputs[i].detach().cpu().numpy())
+                train_psnr_total += psnrcalc(labels[i].cpu().numpy(), outputs[i].detach().cpu().numpy())
            # train_ssim_total += ssim(labels[i].numpy(), outputs[i].detach().numpy(),wiz_size=11, channel_axis=3, multichannel=True)
         losslist.append(totalLoss/len(loaders['train']))
         train_psnr_avg = train_psnr_total / len(loaders['train'])
         #train_ssim_avg = train_ssim_total / len(loaders['train'])
         
-        model.eval()
-        val_psnr_total = 0.0
-        #val_ssim_total = 0.0
-        best_val_psnr_avg=0.0
-        with torch.no_grad():
-            for batch in loaders['val']:
-                images = batch['image'].to(device)
-                labels = batch['target'].to(device)
-            
-                # Forward pass
-                outputs = model(images)
-            
-                # Calculate PSNR and SSIM for validation set
-                for i in range(len(outputs)):
-                    val_psnr_total += psnr(labels[i].cpu().numpy(), outputs[i].cpu().numpy())
-                  # val_ssim_total += ssim(labels[i].numpy(), outputs[i].numpy(), multichannel=True)
-
-        val_psnr_avg = val_psnr_total / len(loaders['val'])
+        val_psnr_avg = validate_and_calculate_psnr(val_dataloader, model, device)
       # val_ssim_avg = val_ssim_total / len(loaders['val'])
         # Print training and validation PSNR and SSIM
         print(f'Epoch [{epoch+1}/{num_epochs}], Train PSNR: {train_psnr_avg:.2f}, Val PSNR: {val_psnr_avg:.2f}')
