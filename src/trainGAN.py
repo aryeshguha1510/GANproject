@@ -88,7 +88,8 @@ wandb.init(
     # track hyperparameters and run metadata
     config={
     "num_epochs": args.num_epochs,
-    "lr": args.lr,
+    "lr1": args.lr1,
+    "lr2": args.lr2,
     }
 )            
 if __name__ == '__main__':
