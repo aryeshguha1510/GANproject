@@ -81,7 +81,7 @@ def train_GAN(generator, discriminator, train_loader, val_loader, device, num_ep
         print(f"Epoch {epoch + 1}, G_loss: {epoch_loss_g:.4f}, D_loss: {epoch_loss_d:.4f},Train PSNR: {train_psnr_avg:.2f}, Avg Val PSNR: {avg_psnr:.2f} dB")
         if avg_psnr > highest_psnr:
             highest_psnr = avg_psnr
-            torch.save(generator.state_dict(), 'best_generator_weights.pth')
+            torch.save(generator.state_dict(), 'genweights.pth')
             print(f"Saved better generator model with PSNR: {highest_psnr:.2f} dB")
 
 wandb.login(key=args.k)

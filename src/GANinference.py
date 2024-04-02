@@ -5,7 +5,7 @@ from torchvision.utils import make_grid
 import matplotlib.pyplot as plt
 from utils.GAN import Generator, Discriminator
 from utils.dataloader import loaders
-from torchmetrics.image import psnr
+from skimage.metrics import peak_signal_noise_ratio as calcpsnr
 from torchmetrics.image import ssim
 
 
@@ -23,16 +23,10 @@ def inference(test_loader, model, device):
         for batch in test_loader:
             images, labels = batch['image'].to(device), batch['target'].to(device)
             outputs = model(images)
-            outputs = outputs*255.0            
-            labels = labels*255.0
-            psnr(outputs,labels)
-            ssim(outputs,labels)
+            psnr = calcpsnr(outputs.cpu().numpy(), labels.cpu().numpy())
             total_psnr += psnr.item()
-            total_ssim += ssim.item()
     avg_psnr = total_psnr / len(test_loader)
-    avg_ssim = total_ssim / len(test_loader)
     print(f'Average PSNR: {avg_psnr:.2f} dB')
-    print(f'Average SSIM: {avg_ssim:.2f} dB')
     
 def visualize_sample(data_loader, model, device, num_images=3):
     batch = next(iter(data_loader))
@@ -49,9 +43,9 @@ def visualize_sample(data_loader, model, device, num_images=3):
     
 if __name__ == '__main__':
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    model_path = 'C:/Users/aryes/Desktop/YEAR 2/mrm/GANproject/weights (5).pth'  # Update this path
+    model_path = 'C:/Users/aryes/Desktop/YEAR 2/mrm/GANproject/weights (7).pth'  # Update this path
     model = load_model(model_path, device)
     test_loader = loaders['test']
-    visualize_sample(test_loader, model, device)
     inference(test_loader, model, device)
+    visualize_sample(test_loader, model, device)
     
