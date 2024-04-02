@@ -44,8 +44,10 @@ def train_GAN(generator, discriminator, train_loader, val_loader, device, num_ep
     optimizer_D = optim.Adam(discriminator.parameters(), lr=args.lr2)
     highest_psnr = 0.0
     for epoch in range(num_epochs):
+        
         generator.train()
         discriminator.train()
+        train_psnr_total = 0.0
         epoch_loss_g = 0.0
         epoch_loss_d = 0.0
         for batch in train_loader:
@@ -73,9 +75,10 @@ def train_GAN(generator, discriminator, train_loader, val_loader, device, num_ep
 
             epoch_loss_g += g_loss.item()
             epoch_loss_d += d_loss.item()
-
+            train_psnr_total += psnrcalc(labels.cpu().numpy(), generated_imgs.detach().cpu().numpy())
+        train_psnr_avg = train_psnr_total / len(loaders['train'])
         avg_psnr = validate_and_calculate_psnr(val_loader, generator, device)
-        print(f"Epoch {epoch + 1}, G_loss: {epoch_loss_g:.4f}, D_loss: {epoch_loss_d:.4f}, Avg PSNR: {avg_psnr:.2f} dB")
+        print(f"Epoch {epoch + 1}, G_loss: {epoch_loss_g:.4f}, D_loss: {epoch_loss_d:.4f},Train PSNR: {train_psnr_avg:.2f}, Avg Val PSNR: {avg_psnr:.2f} dB")
         if avg_psnr > highest_psnr:
             highest_psnr = avg_psnr
             torch.save(generator.state_dict(), 'best_generator_weights.pth')
