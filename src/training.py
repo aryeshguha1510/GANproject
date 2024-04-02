@@ -36,6 +36,19 @@ def validate_and_calculate_psnr(val_loader, model, device):
     avg_psnr = total_psnr / len(val_loader)
     return avg_psnr
 
+def validate_and_calculate_ssim(val_loader, model, device):
+    model.eval()
+    total_ssim = 0.0
+    with torch.no_grad():
+        for batch in val_loader:
+            images,labels = batch['image'].to(device), batch['target'].to(device)
+            outputs = model(images)
+            ssim = ssim(labels.cpu().numpy(), outputs.detach().cpu().numpy(),wiz_size=11, channel_axis=3, multichannel=True)
+            total_ssim += ssim.item()
+    avg_ssim = total_ssim / len(val_loader)
+    return avg_ssim
+
+
 
         
         
@@ -67,18 +80,19 @@ def train_model(model, train_dataloader, val_dataloader, optimizer, num_epochs):
             
             for i in range(len(outputs)):
                 train_psnr_total += psnrcalc(labels[i].cpu().numpy(), outputs[i].detach().cpu().numpy())
-           # train_ssim_total += ssim(labels[i].numpy(), outputs[i].detach().numpy(),wiz_size=11, channel_axis=3, multichannel=True)
+                train_ssim_total += ssim(labels[i].cpu().numpy(), outputs[i].detach().cpu().numpy(),wiz_size=11, channel_axis=3, multichannel=True)
         losslist.append(totalLoss/len(loaders['train']))
         train_psnr_avg = train_psnr_total / len(loaders['train'])
-        #train_ssim_avg = train_ssim_total / len(loaders['train'])
+        train_ssim_avg = train_ssim_total / len(loaders['train'])
         
         val_psnr_avg = validate_and_calculate_psnr(val_dataloader, model, device)
-      # val_ssim_avg = val_ssim_total / len(loaders['val'])
+        val_ssim_avg = validate_and_calculate_ssim(val_dataloader, model, device)
         # Print training and validation PSNR and SSIM
         print(f'Epoch [{epoch+1}/{num_epochs}], Train PSNR: {train_psnr_avg:.2f}, Val PSNR: {val_psnr_avg:.2f}')
+        print(f'Epoch [{epoch+1}/{num_epochs}], Train SSIM: {train_ssim_avg:.2f}, Val PSNR: {val_ssim_avg:.2f}')
         if (val_psnr_avg > best_val_psnr_avg):
             best_val_psnr_avg = val_psnr_avg
-           #best_val_ssim_avg = val_ssim_avg
+            best_val_ssim_avg = val_ssim_avg
             torch.save(model.state_dict(), 'weights.pth')
             print('Weights Saved')
         

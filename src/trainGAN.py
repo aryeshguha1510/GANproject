@@ -39,6 +39,7 @@ def validate_and_calculate_psnr(val_loader, generator, device):
 def train_GAN(generator, discriminator, train_loader, val_loader, device, num_epochs):
     # Losses & optimizers
     adversarial_loss = nn.BCELoss()
+    pixelwise_loss = nn.MSELoss()
     optimizer_G = optim.Adam(generator.parameters(), lr=args.lr1)
     optimizer_D = optim.Adam(discriminator.parameters(), lr=args.lr2)
     highest_psnr = 0.0
@@ -50,13 +51,13 @@ def train_GAN(generator, discriminator, train_loader, val_loader, device, num_ep
         for batch in train_loader:
             images = batch['image'].to(device)
             labels = batch['target'].to(device)
-            valid = torch.ones((labels.size(0), 1), device=device, requires_grad=False)
-            fake = torch.zeros((labels.size(0), 1), device=device, requires_grad=False)
+            valid = torch.ones(labels.size(0), 1).to(device=device)
+            fake = torch.zeros(labels.size(0), 1).to(device=device)
 
             # Train Generator
             optimizer_G.zero_grad()
             generated_imgs = generator(images)
-            g_loss = adversarial_loss(discriminator(generated_imgs), valid.squeeze(1))
+            g_loss = 0.001 * adversarial_loss(discriminator(generated_imgs), valid.squeeze(1)) + pixelwise_loss(generated_imgs, labels)
             wandb.log({"Generator Loss": g_loss.item(), "Epoch": num_epochs+1})
             g_loss.backward()
             optimizer_G.step()
@@ -65,7 +66,7 @@ def train_GAN(generator, discriminator, train_loader, val_loader, device, num_ep
             optimizer_D.zero_grad()
             real_loss = adversarial_loss(discriminator(labels), valid.squeeze(1))
             fake_loss = adversarial_loss(discriminator(generated_imgs.detach()), fake.squeeze(1)  )
-            d_loss = (real_loss + fake_loss) / 2
+            d_loss = (real_loss + fake_loss)
             wandb.log({"Discriminator Loss": d_loss.item(), "Epoch": num_epochs+1})
             d_loss.backward()
             optimizer_D.step()
